@@ -19,8 +19,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  async function loadProfile(userId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      if (error) throw error;
+      if (data) setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    // Kiểm tra session hiện tại khi App vừa khởi chạy
+    // Kiểm tra session ban đầu
     supabase.auth.getSession().then(({ data: { session } }) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -31,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    // Lắng nghe sự thay đổi trạng thái đăng nhập (Login/Logout)
+    // Lắng nghe thay đổi auth để tự động chuyển trang
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
@@ -46,62 +62,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function loadProfile(userId: string) {
-    try {
-      const { data, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Lỗi tải hồ sơ meo~:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function signUp(email: string, password: string, name: string) {
-    // 1. Đăng ký tài khoản trong hệ thống Auth
-    const { data, error: signUpError } = await supabase.auth.signUp({
+  const signUp = async (email: string, password: string, name: string) => {
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { name },
-      },
+      options: { data: { name } },
     });
+    
+    if (error) throw error;
 
-    if (signUpError) throw signUpError;
-
-    // 2. Tự động tạo hồ sơ trống trong bảng user_profiles
     if (data.user) {
-      const { error: profileError } = await supabase.from('user_profiles').insert({
+      // Khởi tạo profile ngay lập tức
+      const { error: profileError } = await supabase.from('user_profiles').upsert({
         id: data.user.id,
-        username: name || 'Học viên mới',
+        username: name,
         total_xp: 0,
         current_streak: 0,
-        level: 1,
-        last_study_date: null
+        level: 1
       });
-      
-      if (profileError) console.error("Lỗi tạo profile mặc định:", profileError);
+      if (profileError) console.error("Profile Init Error:", profileError);
     }
-  }
+  };
 
-  async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
-  }
+  };
 
-  async function signOut() {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
-  }
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    // Vercel/SPA đôi khi cần reload để xóa sạch state cũ
+    window.location.href = '/'; 
+  };
 
   return (
     <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut }}>
@@ -112,8 +104,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
   return context;
 }
