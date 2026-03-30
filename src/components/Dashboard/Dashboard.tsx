@@ -7,7 +7,9 @@ import { VocabularyList } from '../Vocabulary/VocabularyList';
 import { TestMode } from '../Test/TestMode';
 import { Header } from './Header';
 import { Bookmarks } from '../Vocabulary/Bookmarks';
-import { BookOpen, Brain, ClipboardCheck, Upload, Flower2 } from 'lucide-react';
+// 🐾 THÊM: Import component Ngữ pháp mới
+import { GrammarList } from './GrammarList'; 
+import { BookOpen, Brain, ClipboardCheck, Upload, Flower2, GraduationCap, Sparkles } from 'lucide-react';
 import type { DashboardStats as DashboardStatsType } from '../../types';
 
 // Giao diện hiển thị các giai đoạn phát triển của hoa Tulip 🌷
@@ -53,7 +55,8 @@ const TulipGarden = ({ cardsStudied }: { cardsStudied: number }) => {
   );
 };
 
-type View = 'dashboard' | 'flashcard' | 'vocabulary' | 'test' | 'garden';
+// 🐾 CẬP NHẬT: Thêm 'grammar' vào kiểu View
+type View = 'dashboard' | 'flashcard' | 'vocabulary' | 'test' | 'garden' | 'grammar';
 
 export function Dashboard() {
   const { user, profile, signOut } = useAuth();
@@ -62,7 +65,7 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [cardsStudiedToday, setCardsStudiedToday] = useState(0);
-  const [initialVocabFilter, setInitialVocabFilter] = useState<'all' | 'learning' | 'mastered'>('all');
+  const [initialVocabFilter, setInitialVocabFilter] = useState<'all' | 'learning' | 'mastered' | 'not_started'>('all');
 
   useEffect(() => {
     if (user) {
@@ -74,39 +77,34 @@ export function Dashboard() {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      // 🐾 THÊM TRUY VẤN: Lấy tổng số từ trong kho lưu trữ (count)
       const [vocabCount, progressData, dailyStatsData] = await Promise.all([
-        supabase.from('vocabulary').select('*', { count: 'exact', head: true }), // Chỉ lấy số lượng, không lấy dữ liệu
+        supabase.from('vocabulary').select('*', { count: 'exact', head: true }),
         supabase.from('vocabulary_progress').select('*').eq('user_id', user!.id),
         supabase.from('daily_stats').select('*').eq('user_id', user!.id).eq('date', today).maybeSingle(),
       ]);
 
-      // 🐾 Thay đoạn logic cũ bằng bản này:
-const progress = (progressData.data || []) as any[]; // Ép kiểu thành mảng bất kỳ để hết gạch đỏ
+      const progress = (progressData.data || []) as any[];
 
-const wordsToReviewToday = progress.filter((p) => {
-  // Thêm dấu ? để an toàn nếu p.next_review_date bị trống
-  const nextReview = new Date(p.next_review_date || new Date());
-  return nextReview <= new Date();
-}).length;
+      const wordsToReviewToday = progress.filter((p) => {
+        const nextReview = new Date(p.next_review_date || new Date());
+        return nextReview <= new Date();
+      }).length;
 
-const masteredWords = progress.filter((p) => p.status === 'mastered').length;
-const learningWords = progress.filter((p) => p.status === 'learning').length;
+      const masteredWords = progress.filter((p) => p.status === 'mastered').length;
+      const learningWords = progress.filter((p) => p.status === 'learning').length;
 
-// Thêm dấu ! hoặc ép kiểu as any để báo cho TS biết dailyStatsData.data chắc chắn tồn tại
-const dailyData = dailyStatsData.data as any;
+      const dailyData = dailyStatsData.data as any;
+      setCardsStudiedToday(dailyData?.total_answers || 0);
 
-setCardsStudiedToday(dailyData?.total_answers || 0);
-
-setStats({
-  wordsToReviewToday,
-  wordsLearned: vocabCount.count || 0,
-  currentStreak: (profile as any)?.current_streak || 0,
-  totalXP: (profile as any)?.total_xp || 0,
-  accuracyRate: dailyData?.accuracy || 0,
-  masteredWords,
-  learningWords,
-});
+      setStats({
+        wordsToReviewToday,
+        wordsLearned: vocabCount.count || 0,
+        currentStreak: (profile as any)?.current_streak || 0,
+        totalXP: (profile as any)?.total_xp || 0,
+        accuracyRate: dailyData?.accuracy || 0,
+        masteredWords,
+        learningWords,
+      });
     } catch (error) {
       console.error('Lỗi tải thống kê:', error);
     } finally {
@@ -114,11 +112,13 @@ setStats({
     }
   }
 
+  // 🐾 CẬP NHẬT: Thêm mục Ngữ Pháp vào Navigation
   const navigationItems = [
     { id: 'dashboard' as View, icon: BookOpen, label: 'Trang Chủ' },
     { id: 'garden' as View, icon: Flower2, label: 'Khu Vườn' },
     { id: 'flashcard' as View, icon: Brain, label: 'Trạm Ôn Tập' },
     { id: 'vocabulary' as View, icon: Upload, label: 'Kho Từ Vựng' },
+    { id: 'grammar' as View, icon: GraduationCap, label: 'Ngữ Pháp' }, // <-- Mục mới
     { id: 'test' as View, icon: ClipboardCheck, label: 'Thử Thách' },
   ];
 
@@ -158,7 +158,7 @@ setStats({
             {loading ? (
               <div className="flex flex-col items-center justify-center h-96 gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-pink-400"></div>
-                <p className="text-pink-500 font-black">MÈO ĐANG CHĂM VƯỜN...</p>
+                <p className="text-pink-500 font-black tracking-widest">MÈO ĐANG CHĂM VƯỜN...</p>
               </div>
             ) : (
               <div className="w-full">
@@ -168,13 +168,14 @@ setStats({
                       <DashboardStats 
                         stats={stats} 
                         onNavigate={(view, filter) => {
-                          setCurrentView(view);
+                          setCurrentView(view as View);
                           if (filter) setInitialVocabFilter(filter as any);
                         }} 
                       />
-                      <div className="mt-8 bg-white p-8 rounded-[2rem] border-2 border-gray-50 shadow-sm">
-                        <h3 className="text-xl font-black text-gray-800 mb-4">Mẹo Học Tập 🐾</h3>
-                        <ul className="space-y-3 text-gray-600 font-medium">
+                      <div className="mt-8 bg-white p-8 rounded-[2rem] border-2 border-gray-50 shadow-sm relative overflow-hidden">
+                        <div className="absolute -right-4 -top-4 text-pink-50 rotate-12"><Sparkles size={100} /></div>
+                        <h3 className="text-xl font-black text-gray-800 mb-4 relative z-10">Mẹo Học Tập 🐾</h3>
+                        <ul className="space-y-3 text-gray-600 font-medium relative z-10">
                           <li>✨ Học đều đặn mỗi ngày để duy trì chuỗi Streak nhé!</li>
                           <li>✨ Tập trung vào ngữ cảnh - đọc kỹ các câu ví dụ meo meo~</li>
                           <li>✨ Dùng nút Ẩn/Hiện Pinyin để kiểm tra trí nhớ mặt chữ.</li>
@@ -198,8 +199,13 @@ setStats({
                 )}
                 
                 {currentView === 'vocabulary' && (
-  <VocabularyList initialFilter={initialVocabFilter} />
-)}
+                  <VocabularyList initialFilter={initialVocabFilter} />
+                )}
+
+                {/* 🐾 THÊM: Hiển thị trang Ngữ Pháp */}
+                {currentView === 'grammar' && (
+                  <GrammarList />
+                )}
                 
                 {currentView === 'test' && (
                   <TestMode onComplete={() => {

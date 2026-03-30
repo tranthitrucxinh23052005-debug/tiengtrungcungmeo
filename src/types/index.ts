@@ -32,6 +32,14 @@ export interface SM2Result {
   repetitions: number;
   nextReviewDate: Date;
 }
-
+export interface Grammar {
+  id: string;
+  hsk_level: number;
+  title: string;
+  explanation: string;
+  formula: string;
+  examples: { zh: string; py: string; vi: string }[];
+  category: string;
+}
 export type StudyMode = 'flashcard' | 'test' | 'learn';
 export type TestMode = 'zh-to-vi' | 'vi-to-zh';
