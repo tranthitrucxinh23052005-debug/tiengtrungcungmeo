@@ -39,7 +39,7 @@ export function TestMode({ onComplete }: TestModeProps) {
       }
     });
 
-    audio.play().catch(() => console.log("Mèo bị nghẹt mũi rồi TS!"));
+    audio.play().catch(() => console.log("Mèo bị nghẹt mũi rồi bạn ơi!"));
   };
 
   useEffect(() => {
@@ -154,8 +154,8 @@ export function TestMode({ onComplete }: TestModeProps) {
   if (questions.length === 0) return (
     <div className="bg-white rounded-[2rem] p-12 text-center border-4 border-blue-50 shadow-xl max-w-lg mx-auto">
       <div className="text-6xl mb-4">📭</div>
-      <h2 className="text-2xl font-bold text-gray-800 mb-2">Chưa đủ từ vựng rồi TS!</h2>
-      <p className="text-gray-500 mb-6">TS cần học ít nhất 4 từ để mèo có thể tạo bài trắc nghiệm nhé.</p>
+      <h2 className="text-2xl font-bold text-gray-800 mb-2">Chưa đủ từ vựng rồi bạn ơi!</h2>
+      <p className="text-gray-500 mb-6">Bạn cần học ít nhất 4 từ để mèo có thể tạo bài trắc nghiệm nhé.</p>
       <button onClick={onComplete} className="bg-blue-500 text-white px-8 py-3 rounded-xl font-bold">Đi học ngay meo~</button>
     </div>
   );

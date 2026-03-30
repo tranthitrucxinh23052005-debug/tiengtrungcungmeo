@@ -59,7 +59,7 @@ export function FlashcardView({ card, onResponse }: FlashcardViewProps) {
           <div className="p-10 flex-grow flex flex-col justify-center">
             <div className="text-center space-y-8">
               <div className="relative inline-block">
-                <p className="text-xs font-black text-pink-300 uppercase tracking-[0.2em] mb-4">Câu ví dụ nè TS</p>
+                <p className="text-xs font-black text-pink-300 uppercase tracking-[0.2em] mb-4">Câu ví dụ nè </p>
                 <p className="text-3xl font-bold text-gray-800 leading-relaxed px-4">
                   {card.vocabulary.example_sentence}
                 </p>

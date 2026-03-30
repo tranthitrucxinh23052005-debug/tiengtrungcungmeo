@@ -111,7 +111,7 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
     return matchesSearch && matchesHsk && matchesStatus;
   });
 
-  if (loading) return <div className="text-center py-20 font-bold text-pink-500 animate-pulse">Đang tìm từ vựng cho TS... 🐾</div>;
+  if (loading) return <div className="text-center py-20 font-bold text-pink-500 animate-pulse">Đang tìm từ vựng cho bạn... 🐾</div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-20">

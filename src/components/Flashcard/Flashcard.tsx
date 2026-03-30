@@ -34,7 +34,7 @@ export function Flashcard({ onComplete }: FlashcardProps) {
         audio.currentTime = 0;
       }
     });
-    audio.play().catch(() => console.log("Mèo bị nghẹt mũi rồi TS!"));
+    audio.play().catch(() => console.log("Mèo bị nghẹt mũi rồi bạn ơi!"));
   };
 
   useEffect(() => {
@@ -157,7 +157,7 @@ export function Flashcard({ onComplete }: FlashcardProps) {
   if (!isFinished && cards.length === 0) return (
     <div className="text-center p-10 bg-white rounded-[3rem] shadow-xl border-4 border-pink-100 max-w-lg mx-auto">
       <h2 className="text-2xl font-bold text-pink-600">Trạm Ôn Tập Trống Trơn!</h2>
-      <p className="text-gray-500 mt-2 mb-6">TS phải thêm từ vào lộ trình học thì mèo mới có bài đố chứ! 🐱</p>
+      <p className="text-gray-500 mt-2 mb-6">Bạn phải thêm từ vào lộ trình học thì mèo mới có bài đố chứ! 🐱</p>
       <button onClick={onComplete} className="bg-pink-400 text-white px-8 py-3 rounded-2xl font-bold">Quay lại Dashboard</button>
     </div>
   );
