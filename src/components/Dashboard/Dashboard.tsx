@@ -81,27 +81,32 @@ export function Dashboard() {
         supabase.from('daily_stats').select('*').eq('user_id', user!.id).eq('date', today).maybeSingle(),
       ]);
 
-      const progress = progressData.data || [];
-      const wordsToReviewToday = progress.filter((p) => {
-        const nextReview = new Date(p.next_review_date);
-        return nextReview <= new Date();
-      }).length;
+      // 🐾 Thay đoạn logic cũ bằng bản này:
+const progress = (progressData.data || []) as any[]; // Ép kiểu thành mảng bất kỳ để hết gạch đỏ
 
-      const masteredWords = progress.filter((p) => p.status === 'mastered').length;
-      const learningWords = progress.filter((p) => p.status === 'learning').length;
+const wordsToReviewToday = progress.filter((p) => {
+  // Thêm dấu ? để an toàn nếu p.next_review_date bị trống
+  const nextReview = new Date(p.next_review_date || new Date());
+  return nextReview <= new Date();
+}).length;
 
-      setCardsStudiedToday(dailyStatsData.data?.total_answers || 0);
+const masteredWords = progress.filter((p) => p.status === 'mastered').length;
+const learningWords = progress.filter((p) => p.status === 'learning').length;
 
-      setStats({
-        wordsToReviewToday,
-        // 🐾 CẬP NHẬT: Dùng số lượng từ tổng kho ở đây
-        wordsLearned: vocabCount.count || 0, 
-        currentStreak: profile?.current_streak || 0,
-        totalXP: profile?.total_xp || 0,
-        accuracyRate: dailyStatsData.data?.accuracy || 0,
-        masteredWords,
-        learningWords,
-      });
+// Thêm dấu ! hoặc ép kiểu as any để báo cho TS biết dailyStatsData.data chắc chắn tồn tại
+const dailyData = dailyStatsData.data as any;
+
+setCardsStudiedToday(dailyData?.total_answers || 0);
+
+setStats({
+  wordsToReviewToday,
+  wordsLearned: vocabCount.count || 0,
+  currentStreak: (profile as any)?.current_streak || 0,
+  totalXP: (profile as any)?.total_xp || 0,
+  accuracyRate: dailyData?.accuracy || 0,
+  masteredWords,
+  learningWords,
+});
     } catch (error) {
       console.error('Lỗi tải thống kê:', error);
     } finally {
