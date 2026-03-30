@@ -19,7 +19,7 @@ export function Header({ profile, onSignOut, onMenuToggle }: HeaderProps) {
             <Menu className="w-6 h-6" />
           </button>
           <h1 className="text-2xl font-bold text-gray-800">
-            中文 <span className="text-blue-600">Learn</span>
+            中文 <span className="text-blue-600">TXStudy</span>
           </h1>
         </div>
 
@@ -39,7 +39,7 @@ export function Header({ profile, onSignOut, onMenuToggle }: HeaderProps) {
             className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition"
           >
             <LogOut className="w-5 h-5" />
-            <span className="hidden sm:inline">Sign Out</span>
+            <span className="hidden sm:inline">Đăng Xuất</span>
           </button>
         </div>
       </div>

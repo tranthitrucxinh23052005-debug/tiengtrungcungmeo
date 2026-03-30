@@ -1,149 +1,75 @@
 import { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Sparkles } from 'lucide-react';
 
-interface SignupProps {
-  onToggleMode: () => void;
-}
-
-export function Signup({ onToggleMode }: SignupProps) {
+export function Signup({ onToggleMode }: { onToggleMode: () => void }) {
+  const { signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const { signUp } = useAuth();
 
-  async function handleSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
-
-    try {
-      await signUp(email, password, name);
-      setSuccess(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to sign up');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md text-center">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Account Created!</h2>
-          <p className="text-gray-600 mb-6">
-            You can now sign in with your credentials.
-          </p>
-          <button
-            onClick={onToggleMode}
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition"
-          >
-            Go to Sign In
-          </button>
-        </div>
-      </div>
-    );
-  }
+    await signUp(email, password, { username });
+    alert('Kiểm tra email để kích hoạt tài khoản meo~');
+    setLoading(false);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="flex items-center justify-center mb-6">
-          <div className="bg-blue-600 p-3 rounded-full">
-            <UserPlus className="w-8 h-8 text-white" />
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white rounded-[3rem] shadow-2xl p-10 border-4 border-white relative overflow-hidden">
+        <div className="text-center space-y-4">
+          <div className="inline-flex p-4 bg-blue-100 rounded-3xl text-blue-500">
+            <Sparkles size={40} />
           </div>
+          <h2 className="text-3xl font-black text-gray-800">Trở Thành Phiên Bản Mới</h2>
+          <p className="text-gray-500 font-bold">Bắt đầu hành trình chinh phục tiếng Trung!</p>
         </div>
 
-        <h1 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Create Account
-        </h1>
-        <p className="text-center text-gray-600 mb-8">
-          Start your Chinese learning journey today
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-              {error}
-            </div>
-          )}
-
-          <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <div className="relative">
+            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300" size={20} />
             <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="Your Name"
-              required
+              type="text" required value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-blue-50/50 border-2 border-transparent focus:border-blue-300 rounded-2xl outline-none transition-all font-bold"
+              placeholder="Tên của bạn (Username)..."
             />
           </div>
-
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
+          {/* Email & Pass tương tự Login nhưng đổi sang tông màu Blue */}
+          <div className="relative">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300" size={20} />
             <input
-              id="email"
-              type="email"
-              value={email}
+              type="email" required value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="your@email.com"
-              required
+              className="w-full pl-12 pr-4 py-4 bg-blue-50/50 border-2 border-transparent focus:border-blue-300 rounded-2xl outline-none transition-all font-bold"
+              placeholder="Email đăng ký..."
             />
           </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password
-            </label>
+          <div className="relative">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-300" size={20} />
             <input
-              id="password"
-              type="password"
-              value={password}
+              type="password" required value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition"
-              placeholder="••••••••"
-              required
-              minLength={6}
+              className="w-full pl-12 pr-4 py-4 bg-blue-50/50 border-2 border-transparent focus:border-blue-300 rounded-2xl outline-none transition-all font-bold"
+              placeholder="Mật khẩu bí mật..."
             />
-            <p className="text-xs text-gray-500 mt-1">At least 6 characters</p>
           </div>
 
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            type="submit" disabled={loading}
+            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-4 rounded-2xl font-black text-xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
           >
-            {loading ? 'Creating account...' : 'Sign Up'}
+            {loading ? 'Đang tạo hồ sơ...' : <><UserPlus size={24} /> Đăng Ký Ngay</>}
           </button>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <button
-              onClick={onToggleMode}
-              className="text-blue-600 hover:text-blue-700 font-semibold"
-            >
-              Sign in
-            </button>
-          </p>
-        </div>
+        <p className="mt-6 text-center text-gray-500 font-bold">
+          Đã có tài khoản?{' '}
+          <button onClick={onToggleMode} className="text-blue-500 hover:underline">Đăng nhập meo~</button>
+        </p>
       </div>
     </div>
   );

@@ -1,123 +1,86 @@
-import { BookOpen, Target, Trophy, TrendingUp, Brain, CheckCircle } from 'lucide-react';
+import { Target, Book, Brain, CheckCircle, TrendingUp, Trophy } from 'lucide-react';
 import type { DashboardStats as DashboardStatsType } from '../../types';
 
 interface DashboardStatsProps {
   stats: DashboardStatsType;
-  onStartStudy: () => void;
+  onNavigate: (view: 'flashcard' | 'vocabulary' | 'test', filter?: string) => void;
 }
 
-export function DashboardStats({ stats, onStartStudy }: DashboardStatsProps) {
-  const statCards = [
+export function DashboardStats({ stats, onNavigate }: DashboardStatsProps) {
+  const cards = [
     {
-      icon: Target,
-      label: 'Due Today',
+      label: 'Cần Ôn Hôm Nay',
       value: stats.wordsToReviewToday,
-      color: 'bg-red-50 text-red-600',
-      borderColor: 'border-red-200',
+      icon: Target,
+      color: 'text-rose-500',
+      bgColor: 'bg-rose-50',
+      borderColor: 'border-rose-100',
+      action: () => onNavigate('flashcard') // Nhấn vào là đi ôn tập
     },
     {
-      icon: BookOpen,
-      label: 'Total Words',
+      label: 'Tổng Số Từ',
       value: stats.wordsLearned,
-      color: 'bg-blue-50 text-blue-600',
-      borderColor: 'border-blue-200',
+      icon: Book,
+      color: 'text-blue-500',
+      bgColor: 'bg-blue-50',
+      borderColor: 'border-blue-100',
+      action: () => onNavigate('vocabulary','all') // Nhấn vào là xem kho từ
     },
     {
-      icon: Brain,
-      label: 'Learning',
+      label: 'Đang Học',
       value: stats.learningWords,
-      color: 'bg-yellow-50 text-yellow-600',
-      borderColor: 'border-yellow-200',
+      icon: Brain,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-50',
+      borderColor: 'border-amber-100',
+      action: () => onNavigate('vocabulary','learning') 
     },
     {
-      icon: CheckCircle,
-      label: 'Mastered',
+      label: 'Đã Thuộc Lòng',
       value: stats.masteredWords,
-      color: 'bg-green-50 text-green-600',
-      borderColor: 'border-green-200',
+      icon: CheckCircle,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-50',
+      borderColor: 'border-emerald-100',
+      action: () => onNavigate('vocabulary','mastered')
     },
     {
+      label: 'Tỷ Lệ Chính Xác',
+      value: `${Math.round(stats.accuracyRate)}%`,
       icon: TrendingUp,
-      label: 'Accuracy',
-      value: `${stats.accuracyRate.toFixed(0)}%`,
-      color: 'bg-purple-50 text-purple-600',
-      borderColor: 'border-purple-200',
+      color: 'text-purple-500',
+      bgColor: 'bg-purple-50',
+      borderColor: 'border-purple-100',
+      action: () => onNavigate('test') // Nhấn vào là đi thử thách để cải thiện accuracy
     },
     {
-      icon: Trophy,
-      label: 'Total XP',
+      label: 'Tổng Kinh Nghiệm',
       value: stats.totalXP,
-      color: 'bg-orange-50 text-orange-600',
-      borderColor: 'border-orange-200',
+      icon: Trophy,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-50',
+      borderColor: 'border-orange-100',
+      action: () => {} // XP thì chỉ để ngắm thôi meo~
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome back!</h2>
-        <p className="text-gray-600">
-          {stats.wordsToReviewToday > 0
-            ? `You have ${stats.wordsToReviewToday} word${stats.wordsToReviewToday > 1 ? 's' : ''} to review today`
-            : 'Great job! No reviews due today'}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {statCards.map((card, index) => (
-          <div
-            key={index}
-            className={`bg-white border ${card.borderColor} rounded-xl p-6 transition hover:shadow-lg`}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">{card.label}</p>
-                <p className="text-3xl font-bold text-gray-800">{card.value}</p>
-              </div>
-              <div className={`${card.color} p-3 rounded-full`}>
-                <card.icon className="w-6 h-6" />
-              </div>
-            </div>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {cards.map((card, index) => (
+        <button
+          key={index}
+          onClick={card.action}
+          className={`group flex items-center justify-between p-6 bg-white border-2 ${card.borderColor} rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 text-left`}
+        >
+          <div className="space-y-1">
+            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">{card.label}</p>
+            <p className="text-4xl font-black text-gray-800">{card.value}</p>
           </div>
-        ))}
-      </div>
-
-      {stats.wordsToReviewToday > 0 && (
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 text-white">
-          <h3 className="text-2xl font-bold mb-2">Ready to study?</h3>
-          <p className="mb-4 text-blue-100">
-            Keep your streak going by reviewing your flashcards
-          </p>
-          <button
-            onClick={onStartStudy}
-            className="bg-white text-blue-600 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition"
-          >
-            Start Studying
-          </button>
-        </div>
-      )}
-
-      <div className="bg-white rounded-xl p-6 border border-gray-200">
-        <h3 className="text-xl font-bold text-gray-800 mb-4">Learning Tips</h3>
-        <ul className="space-y-3 text-gray-700">
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Study consistently every day to maintain your streak</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Focus on context - read the example sentences carefully</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Use pinyin toggle to test your character recognition</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-blue-600 font-bold">•</span>
-            <span>Take regular tests to reinforce your learning</span>
-          </li>
-        </ul>
-      </div>
+          <div className={`${card.bgColor} ${card.color} p-4 rounded-2xl group-hover:scale-110 transition-transform`}>
+            <card.icon className="w-8 h-8" />
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
