@@ -6,7 +6,7 @@ import { Flashcard } from '../Flashcard/Flashcard';
 import { VocabularyList } from '../Vocabulary/VocabularyList';
 import { TestMode } from '../Test/TestMode';
 import { Header } from './Header';
-import { Bookmarks } from '../vocabulary/Bookmarks';
+import { Bookmarks } from '../Vocabulary/Bookmarks';
 import { BookOpen, Brain, ClipboardCheck, Upload, Flower2 } from 'lucide-react';
 import type { DashboardStats as DashboardStatsType } from '../../types';
 
