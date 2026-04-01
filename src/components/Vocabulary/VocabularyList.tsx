@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { VocabularyUpload } from './VocabularyUpload';
-import { Plus, Search, BookmarkPlus, BookmarkCheck, Play, CheckCircle, GraduationCap, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, BookmarkPlus, BookmarkCheck, Play, CheckCircle, GraduationCap, ChevronLeft, ChevronRight, Volume2 } from 'lucide-react';
 import type { VocabularyWithProgress } from '../../types';
 
 interface VocabularyListProps {
@@ -24,6 +24,9 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
   const [filterHsk, setFilterHsk] = useState<string>('all'); 
   const [filterStatus, setFilterStatus] = useState<string>(initialFilter);
 
+  // 🐾 QUẢN LÝ ÂM THANH
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
   // Reset về trang 1 khi thay đổi bộ lọc hoặc tìm kiếm
   useEffect(() => {
     setCurrentPage(1);
@@ -33,7 +36,39 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
     if (user) loadVocabulary();
   }, [user, currentPage, searchTerm, filterHsk, filterStatus, initialFilter]);
 
-  const playSound = (type: 'correct' | 'finish') => {
+  // 🐾 HÀM PHÁT ÂM THANH - ÉP BUỘC NGẮT Ở 1.7S
+  const handleSpeak = (text: string) => {
+    if (!text) return;
+
+    // 1. Dọn dẹp âm thanh cũ ngay lập tức
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0; // Quay về đầu
+      audioRef.current.src = ""; // Xóa nguồn
+    }
+
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=zh-CN&client=tw-ob`;
+    const audio = new Audio(url);
+    
+    // Lưu vào ref để mình có quyền kiểm soát "sự sống" của nó
+    audioRef.current = audio;
+    
+    // 2. Bắt đầu phát
+    audio.play().catch(error => console.error("Lỗi phát:", error));
+
+    // 3. 🔪 LỆNH TRUY SÁT: Sau đúng 1700ms là phải im lặng!
+    setTimeout(() => {
+      if (audioRef.current === audio) {
+        audio.pause();
+        audio.currentTime = 0; 
+        audio.src = ""; 
+        audioRef.current = null; // Giải phóng Ref hoàn toàn
+        console.log("Đã dọn dẹp xong xuôi ở 1.7s cho TS nhé! 🧹🐾");
+      }
+    }, 1700);
+  };
+
+  const playSystemSound = (type: 'correct' | 'finish') => {
     const audio = new Audio(`/sounds/${type}.mp3`);
     audio.volume = 0.4;
     audio.play().catch(() => {});
@@ -42,15 +77,10 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
   async function loadVocabulary() {
     try {
       setLoading(true);
-      
-      // 1. Tính toán vị trí lấy dữ liệu
       const from = (currentPage - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      // 2. Xây dựng câu truy vấn từ vựng
-      let query = supabase
-        .from('vocabulary')
-        .select('*', { count: 'exact' });
+      let query = supabase.from('vocabulary').select('*', { count: 'exact' });
 
       if (filterHsk !== 'all') {
         query = query.eq('hsk_level', Number(filterHsk));
@@ -67,7 +97,6 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
       if (vocabError) throw vocabError;
       setTotalCount(count || 0);
 
-      // 3. Lấy tiến độ và bookmark của user
       const [progressData, bookmarksData] = await Promise.all([
         supabase.from('vocabulary_progress').select('*').eq('user_id', user!.id),
         supabase.from('bookmarks').select('word_id').eq('user_id', user!.id),
@@ -83,8 +112,6 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
         bookmarked: bookmarkSet.has(v.id),
       }));
 
-      // Lọc theo trạng thái status (Filter Client-side sau khi đã lấy trang)
-      // Nếu TS muốn lọc status trên toàn bộ 2000 từ, cần nâng cấp câu Query Join bảng
       setVocabulary(enrichedVocab);
     } catch (error) {
       console.error('Lỗi tải kho:', error);
@@ -93,17 +120,35 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
     }
   }
 
-  async function startLearning(word: VocabularyWithProgress) {
+ async function startLearning(word: VocabularyWithProgress) {
     try {
+      // 1. Lưu tiến độ vào Database
       await supabase.from('vocabulary_progress').insert({
         user_id: user!.id,
         word_id: word.id,
         status: 'learning',
         next_review_date: new Date().toISOString(),
       });
-      playSound('correct');
+
+      // 2. PHÁT ÂM THANH HỆ THỐNG - ÉP BUỘC DỪNG Ở 1.7S
+      const systemAudio = new Audio('/sounds/correct.mp3');
+      systemAudio.volume = 0.4;
+      systemAudio.play().catch(() => {});
+
+      // 🔪 LỆNH TRẢM: Đúng 1.7 giây là im lặng, không nói nhiều!
+      setTimeout(() => {
+        systemAudio.pause();
+        systemAudio.src = "";
+        systemAudio.load();
+        console.log("Mèo đã 'trảm' âm thanh hệ thống ở 1.7s! 🐾🧹");
+      }, 1700);
+
+      // 3. Cập nhật giao diện ngay lập tức
       setVocabulary(prev => prev.map(v => v.id === word.id ? { ...v, progress: { status: 'learning' } as any } : v));
-    } catch (error) { console.error(error); }
+      
+    } catch (error) { 
+      console.error("Lỗi khi bắt đầu học:", error); 
+    }
   }
 
   async function toggleBookmark(word: VocabularyWithProgress) {
@@ -138,7 +183,7 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
           <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-pink-300 w-5 h-5" />
           <input
             type="text"
-            placeholder="Tìm trong 2,342 từ vựng..."
+            placeholder="Tìm kiếm từ vựng..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-6 py-4 bg-pink-50/30 border-2 border-transparent focus:border-pink-200 rounded-2xl outline-none transition-all font-bold"
@@ -160,22 +205,6 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
               </button>
             ))}
           </div>
-
-          <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-100">
-            <span className="text-[10px] font-black text-gray-400 px-2 uppercase">Trạng thái:</span>
-            <button
-              onClick={() => setFilterStatus('all')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-black transition-all ${filterStatus === 'all' ? 'bg-blue-500 text-white shadow-md' : 'text-gray-400 hover:bg-white'}`}
-            >
-              Mọi từ
-            </button>
-            <button
-              onClick={() => setFilterStatus('learning')}
-              className={`px-4 py-1.5 rounded-xl text-sm font-black transition-all ${filterStatus === 'learning' ? 'bg-green-500 text-white shadow-md' : 'text-gray-400 hover:bg-white'}`}
-            >
-              Đang học
-            </button>
-          </div>
         </div>
       </div>
 
@@ -187,12 +216,25 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
                 <div className="flex items-center gap-4">
                   <h3 className="text-5xl font-black text-gray-800 tracking-tighter">{word.hanzi}</h3>
                   <div className="flex flex-col">
-                    <span className="text-pink-500 font-bold">{word.pinyin}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-pink-500 font-bold">{word.pinyin}</span>
+                      <button 
+                        onClick={() => handleSpeak(word.hanzi)}
+                        className="p-1.5 bg-pink-50 text-pink-500 rounded-lg hover:bg-pink-500 hover:text-white transition-colors"
+                      >
+                        <Volume2 size={16} />
+                      </button>
+                    </div>
                     <span className="flex items-center gap-1 bg-blue-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full w-fit mt-1 shadow-sm">HSK {word.hsk_level}</span>
                   </div>
                 </div>
                 <p className="text-xl text-gray-700 font-bold bg-pink-50/50 px-4 py-2 rounded-2xl w-fit border border-pink-50">{word.meaning_vi}</p>
-                <p className="text-gray-500 italic leading-snug">"{word.example_sentence}"</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-gray-500 italic leading-snug flex-1">"{word.example_sentence}"</p>
+                  <button onClick={() => handleSpeak(word.example_sentence || '')} className="text-gray-300 hover:text-pink-400 p-1">
+                    <Volume2 size={14} />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-col gap-3">
@@ -218,12 +260,11 @@ export function VocabularyList({ initialFilter = 'all' }: VocabularyListProps) {
                 )}
               </div>
             </div>
-            <div className="absolute -bottom-4 -right-4 text-pink-50 text-8xl font-black opacity-20 group-hover:scale-110 transition-transform pointer-events-none select-none">🐾</div>
           </div>
         ))}
       </div>
 
-      {/* 🐾 THANH ĐIỀU HƯỚNG PHÂN TRANG */}
+      {/* THANH ĐIỀU HƯỚNG PHÂN TRANG */}
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-4 mt-12 bg-white p-4 rounded-3xl shadow-lg border-4 border-pink-50 w-fit mx-auto">
           <button
